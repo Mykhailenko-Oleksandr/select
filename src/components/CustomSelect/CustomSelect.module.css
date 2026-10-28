@@ -1,0 +1,11 @@
+:where(.wrap) {
+  display: inline-block;
+
+  min-width: 150px;
+  height: 32px;
+
+  border: 1px solid #000;
+  border-radius: 10px;
+
+  padding: 4px 8px;
+}
