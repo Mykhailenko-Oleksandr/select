@@ -1,0 +1,12 @@
+# Створюємо глобальне правило: примусово конвертувати текстові файли в LF при коміті
+* text=auto eol=lf
+
+# Захищаємо бінарні файли (зображення тощо), щоб Git їх не зіпсував
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
