@@ -41,7 +41,7 @@ const options = [
 
 const App = () => {
   const [selectedValue, setSelectedValue] = useState<SelectOption | undefined>(
-    undefined,
+    undefined
   );
 
   return (
