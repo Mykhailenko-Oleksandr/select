@@ -1,48 +1,45 @@
-import { useState } from "react";
-import css from "./App.module.css";
-import CustomSelect, {
-  type SelectOption,
-} from "./components/CustomSelect/CustomSelect";
+import { useState } from 'react';
+import css from './App.module.css';
+import CustomSelect, { type SelectOption } from './components/CustomSelect/CustomSelect';
 
 const options = [
   {
-    label: "First",
+    label: 'First',
     value: 1,
   },
   {
-    label: "Second",
+    label: 'Second',
     value: 2,
   },
   {
-    label: "Third",
+    label: 'Third',
     value: 3,
   },
   {
-    label: "Fourth",
+    label: 'Fourth',
     value: 4,
   },
   {
-    label: "Fifth",
+    label: 'Fifth',
     value: 5,
   },
   {
-    label: "Sixth",
+    label: 'Sixth',
     value: 6,
   },
   {
-    label: "Seventh",
+    label: 'Seventh',
     value: 7,
   },
   {
-    label: "Eighth",
+    label: 'Eighth',
     value: 8,
   },
 ];
 
 const App = () => {
-  const [selectedValue, setSelectedValue] = useState<SelectOption | undefined>(
-    undefined
-  );
+  const [selectedValue, setSelectedValue] = useState<SelectOption | undefined>();
+  const [selectedValues, setSelectedValues] = useState<SelectOption[]>([]);
 
   return (
     <div className={css.container}>
@@ -50,6 +47,14 @@ const App = () => {
         options={options}
         value={selectedValue}
         onChange={(value) => setSelectedValue(value)}
+      />
+      <br />
+
+      <CustomSelect
+        multiple
+        options={options}
+        value={selectedValues}
+        onChange={(value) => setSelectedValues(value)}
       />
     </div>
   );

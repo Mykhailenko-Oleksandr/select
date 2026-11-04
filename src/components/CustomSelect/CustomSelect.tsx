@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import css from './CustomSelect.module.css';
 
 export type SelectOption = {
@@ -6,57 +6,165 @@ export type SelectOption = {
   value: string | number;
 };
 
-interface CustomSelectProps {
-  containerClassName?: string;
-  options: SelectOption[];
+interface SingleSelectProps {
+  multiple?: false;
   value?: SelectOption;
   onChange: (value: SelectOption | undefined) => void;
 }
 
-const CustomSelect = ({ containerClassName, options, value, onChange }: CustomSelectProps) => {
+interface MultipleSelectProps {
+  multiple: true;
+  value: SelectOption[];
+  onChange: (value: SelectOption[]) => void;
+}
+
+type SelectProps = {
+  containerClassName?: string;
+  options: SelectOption[];
+} & (SingleSelectProps | MultipleSelectProps);
+
+const CustomSelect = ({ multiple, containerClassName, options, value, onChange }: SelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  function onSelect(e: React.MouseEvent<HTMLLIElement>, option: SelectOption) {
-    e.stopPropagation();
-
-    if (option !== value) onChange(option);
+  function onSelect(option: SelectOption) {
+    if (multiple) {
+      if (value.includes(option)) {
+        onChange(value.filter((o) => o !== option));
+      } else {
+        onChange([...value, option]);
+      }
+    } else {
+      if (option !== value) onChange(option);
+    }
 
     setIsOpen(false);
   }
 
-  function onClear(e: React.MouseEvent<HTMLButtonElement>) {
-    e.stopPropagation();
-    onChange(undefined);
+  function onClear() {
+    if (multiple) {
+      onChange([]);
+    } else {
+      onChange(undefined);
+    }
   }
 
   function isSelectedOption(option: SelectOption) {
-    return option === value;
+    return multiple ? value.includes(option) : option === value;
   }
+
+  function renderSelectedValue() {
+    if (multiple) {
+      return value.length > 0
+        ? value.map((v) => (
+            <button
+              type="button"
+              key={v.value}
+              className={css.valueBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(v);
+              }}
+            >
+              {v.label}
+              <svg width={8} height={8}>
+                <use href="icons.svg#icon-close"></use>
+              </svg>
+            </button>
+          ))
+        : 'Оберіть варіанти';
+    } else {
+      return value ? value.label : 'Оберіть варіант';
+    }
+  }
+
+  useEffect(() => {
+    const container = containerRef.current;
+
+    const pressKeyHandler = (e: KeyboardEvent) => {
+      if (!container || !container.contains(e.target as Node)) return;
+
+      switch (e.code) {
+        case 'Enter':
+        case 'Space':
+          e.preventDefault();
+
+          if (!isOpen) {
+            setIsOpen(true);
+          } else {
+            const option = options[highlightedIndex];
+            if (option) {
+              onSelect(option);
+            }
+          }
+          break;
+        case 'ArrowUp':
+        case 'ArrowDown': {
+          e.preventDefault();
+
+          if (!isOpen) {
+            setIsOpen(true);
+            break;
+          }
+
+          const newValue = highlightedIndex + (e.code === 'ArrowDown' ? 1 : -1);
+
+          if (newValue >= 0 && newValue < options.length) {
+            setHighlightedIndex(newValue);
+          }
+          break;
+        }
+        case 'Escape':
+          if (isOpen) {
+            e.preventDefault();
+            setIsOpen(false);
+          }
+          break;
+      }
+    };
+
+    container?.addEventListener('keydown', pressKeyHandler);
+
+    return () => {
+      container?.removeEventListener('keydown', pressKeyHandler);
+    };
+  }, [isOpen, highlightedIndex, options]);
 
   return (
     <div
+      ref={containerRef}
       className={`${css.wrap} ${containerClassName ?? ''}`}
       tabIndex={0}
+      onBlur={() => setIsOpen(false)}
       onClick={() => {
         setHighlightedIndex(0);
         setIsOpen((prev) => !prev);
       }}
-      onBlur={() => setIsOpen(false)}
     >
-      <span className={css.textValue}>{value ? value.label : 'Оберіть варіант'}</span>
+      <span className={css.textValue}>{renderSelectedValue()}</span>
+
       <div className={css.btnsBox}>
-        <button type="button" className={css.clearBtn} onClick={(e) => onClear(e)}>
+        <button
+          type="button"
+          className={css.clearBtn}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClear();
+          }}
+        >
           <svg width={14} height={14}>
             <use href="icons.svg#icon-close"></use>
           </svg>
         </button>
+
         <div className={css.divider}></div>
-        <button type="button" className={`${css.arrowBtn} ${isOpen ? css.isOpen : ''}`}>
+
+        <div className={`${css.arrowBtn} ${isOpen ? css.isOpen : ''}`}>
           <svg width={12} height={12}>
             <use href="icons.svg#icon-caret"></use>
           </svg>
-        </button>
+        </div>
       </div>
 
       {isOpen && (
@@ -66,7 +174,10 @@ const CustomSelect = ({ containerClassName, options, value, onChange }: CustomSe
               key={option.value}
               className={`${css.option} ${isSelectedOption(option) ? css.isSelected : ''} 
               ${highlightedIndex === index ? css.isHighlighted : ''}`}
-              onClick={(e) => onSelect(e, option)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(option);
+              }}
               onMouseEnter={() => setHighlightedIndex(index)}
             >
               {option.label}
