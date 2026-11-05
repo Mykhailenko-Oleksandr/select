@@ -40,6 +40,8 @@ const options = [
 const App = () => {
   const [selectedValue, setSelectedValue] = useState<SelectOption | undefined>();
   const [selectedValues, setSelectedValues] = useState<SelectOption[]>([]);
+  const [selectedValue2, setSelectedValue2] = useState<SelectOption | undefined>();
+  const [selectedValues2, setSelectedValues2] = useState<SelectOption[]>([]);
 
   return (
     <div className={css.container}>
@@ -60,6 +62,24 @@ const App = () => {
         containerClassName={css.multipleSelect}
         searchable
         searchPlaceholder={'Введіть ПІБ'}
+      />
+
+      <br />
+      <CustomSelect
+        options={options}
+        value={selectedValue2}
+        onChange={(value) => setSelectedValue2(value)}
+        containerClassName={css.wrapApp}
+        searchable
+      />
+      <br />
+
+      <CustomSelect
+        multiple
+        options={options}
+        value={selectedValues2}
+        onChange={(value) => setSelectedValues2(value)}
+        containerClassName={css.multipleSelect}
       />
     </div>
   );

@@ -1,12 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-  useId,
-  useMemo,
-  type FocusEvent,
-} from 'react';
+import { useEffect, useRef, useState, useCallback, useId, useMemo, type FocusEvent } from 'react';
 import css from './CustomSelect.module.css';
 
 export type SelectOption = {
@@ -154,22 +146,16 @@ const CustomSelect = ({
         <input
           className={`${css.searchInput} ${searchInputClassName ?? ''}`}
           type="text"
-          value={
-            isSearching
-              ? searchQuery
-              : !multiple && value
-                ? String(value.label)
-                : ''
-          }
+          value={isSearching ? searchQuery : !multiple && value ? String(value.label) : ''}
           placeholder={
             searchPlaceholder ??
             (multiple
               ? value.length === 0
-                ? 'Оберіть варіанти або знайдіть'
+                ? 'Оберіть варіанти'
                 : 'Знайти'
               : value
                 ? undefined
-                : 'Оберіть або знайдіть')
+                : 'Оберіть варіант')
           }
           aria-label="Пошук варіантів"
           autoComplete="off"
@@ -207,9 +193,9 @@ const CustomSelect = ({
     const pressKeyHandler = (e: KeyboardEvent) => {
       if (!container || !container.contains(e.target as Node)) return;
       if ((e.target as HTMLElement).closest('button')) return;
-    if ((e.target as HTMLElement).tagName === 'INPUT' && e.key.length === 1) {
-      return;
-    }
+      if ((e.target as HTMLElement).tagName === 'INPUT' && e.key.length === 1) {
+        return;
+      }
 
       switch (e.code) {
         case 'Enter':
