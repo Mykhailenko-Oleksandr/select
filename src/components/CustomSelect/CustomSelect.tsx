@@ -20,10 +20,32 @@ interface MultipleSelectProps {
 
 type SelectProps = {
   containerClassName?: string;
+  textBoxClassName?: string;
+  valueBtnClassName?: string;
+  rightBtnsBoxClassName?: string;
+  clearBtnClassName?: string;
+  dividerClassName?: string;
+  caretClassName?: string;
+  listBoxClassName?: string;
+  optionClassName?: string;
   options: SelectOption[];
 } & (SingleSelectProps | MultipleSelectProps);
 
-const CustomSelect = ({ multiple, containerClassName, options, value, onChange }: SelectProps) => {
+const CustomSelect = ({
+  multiple,
+  containerClassName,
+  textBoxClassName,
+  valueBtnClassName,
+  rightBtnsBoxClassName,
+  clearBtnClassName,
+  dividerClassName,
+  caretClassName,
+  listBoxClassName,
+  optionClassName,
+  options,
+  value,
+  onChange,
+}: SelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -73,7 +95,7 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
             <button
               type="button"
               key={v.value}
-              className={css.valueBtn}
+              className={`${css.valueBtn} ${valueBtnClassName ?? ''}`}
               aria-label={`Видалити ${v.label}`}
               onClick={(e) => {
                 e.stopPropagation();
@@ -200,12 +222,12 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
         isOpen && options[activeIndex] ? `${listId}-option-${activeIndex}` : undefined
       }
     >
-      <span className={css.textValue}>{renderSelectedValue()}</span>
+      <span className={`${css.textValue} ${textBoxClassName ?? ''}`}>{renderSelectedValue()}</span>
 
-      <div className={css.btnsBox}>
+      <div className={`${css.btnsBox} ${rightBtnsBoxClassName ?? ''}`}>
         <button
           type="button"
-          className={css.clearBtn}
+          className={`${css.clearBtn} ${clearBtnClassName ?? ''}`}
           aria-label="Очистити вибір"
           onClick={(e) => {
             e.stopPropagation();
@@ -217,9 +239,9 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
           </svg>
         </button>
 
-        <div className={css.divider}></div>
+        <div className={`${css.divider} ${dividerClassName ?? ''}`}></div>
 
-        <div className={`${css.arrowBtn} ${isOpen ? css.isOpen : ''}`}>
+        <div className={`${css.arrowBtn} ${isOpen ? css.isOpen : ''} ${caretClassName ?? ''}`}>
           <svg width={12} height={12}>
             <use href="icons.svg#icon-caret"></use>
           </svg>
@@ -229,7 +251,7 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
       {isOpen && (
         <ul
           id={listId}
-          className={css.listBox}
+          className={`${css.listBox} ${listBoxClassName ?? ''}`}
           role="listbox"
           aria-multiselectable={multiple || undefined}
         >
@@ -241,7 +263,7 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
               }}
               key={option.value}
               className={`${css.option} ${isSelectedOption(option) ? css.isSelected : ''} 
-              ${activeIndex === index ? css.isHighlighted : ''}`}
+              ${activeIndex === index ? css.isHighlighted : ''} ${optionClassName ?? ''}`}
               role="option"
               aria-selected={isSelectedOption(option)}
               onClick={(e) => {

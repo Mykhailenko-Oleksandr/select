@@ -47,6 +47,7 @@ const App = () => {
         options={options}
         value={selectedValue}
         onChange={(value) => setSelectedValue(value)}
+        textBoxClassName={css.textValue}
       />
       <br />
 
@@ -55,6 +56,7 @@ const App = () => {
         options={options}
         value={selectedValues}
         onChange={(value) => setSelectedValues(value)}
+        containerClassName={css.multipleSelect}
       />
     </div>
   );
