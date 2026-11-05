@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, type FocusEvent } from 'react';
+import { useEffect, useRef, useState, useCallback, useId, type FocusEvent } from 'react';
 import css from './CustomSelect.module.css';
 
 export type SelectOption = {
@@ -28,6 +28,8 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef<Array<HTMLLIElement | null>>([]);
+  const listId = useId();
+  const activeIndex = options.length === 0 ? 0 : Math.min(highlightedIndex, options.length - 1);
 
   function isSameOption(first: SelectOption, second?: SelectOption) {
     return first.value === second?.value;
@@ -112,7 +114,7 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
           if (!isOpen) {
             setIsOpen(true);
           } else {
-            const option = options[Math.min(highlightedIndex, options.length - 1)];
+            const option = options[Math.min(activeIndex, options.length - 1)];
             if (option) {
               onSelect(option);
             }
@@ -131,7 +133,7 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
           if (options.length === 0) break;
 
           const newValue =
-            (highlightedIndex + (e.code === 'ArrowDown' ? 1 : -1) + options.length) %
+            (activeIndex + (e.code === 'ArrowDown' ? 1 : -1) + options.length) %
             options.length;
 
           if (newValue >= 0 && newValue < options.length) {
@@ -170,15 +172,15 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
     return () => {
       container?.removeEventListener('keydown', pressKeyHandler);
     };
-  }, [isOpen, highlightedIndex, options, onSelect]);
+  }, [isOpen, activeIndex, options, onSelect]);
 
   useEffect(() => {
-    if (isOpen && optionRefs.current[highlightedIndex]) {
-      optionRefs.current[highlightedIndex]?.scrollIntoView({
+    if (isOpen && optionRefs.current[activeIndex]) {
+      optionRefs.current[activeIndex]?.scrollIntoView({
         block: 'nearest',
       });
     }
-  }, [isOpen, highlightedIndex]);
+  }, [isOpen, activeIndex]);
 
   return (
     <div
@@ -193,7 +195,10 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
       role="combobox"
       aria-expanded={isOpen}
       aria-haspopup="listbox"
-      aria-controls="selectList"
+      aria-controls={listId}
+      aria-activedescendant={
+        isOpen && options[activeIndex] ? `${listId}-option-${activeIndex}` : undefined
+      }
     >
       <span className={css.textValue}>{renderSelectedValue()}</span>
 
@@ -223,19 +228,20 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
 
       {isOpen && (
         <ul
-          id="selectList"
+          id={listId}
           className={css.listBox}
           role="listbox"
           aria-multiselectable={multiple || undefined}
         >
           {options.map((option, index) => (
             <li
+              id={`${listId}-option-${index}`}
               ref={(element) => {
                 optionRefs.current[index] = element;
               }}
-              key={`${option.value}-${index}`}
+              key={option.value}
               className={`${css.option} ${isSelectedOption(option) ? css.isSelected : ''} 
-              ${highlightedIndex === index ? css.isHighlighted : ''}`}
+              ${activeIndex === index ? css.isHighlighted : ''}`}
               role="option"
               aria-selected={isSelectedOption(option)}
               onClick={(e) => {
