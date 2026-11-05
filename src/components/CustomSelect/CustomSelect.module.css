@@ -7,6 +7,7 @@
 
   min-width: 150px;
   min-height: 32px;
+  width: 200px;
 
   border: 2px solid #777;
   border-radius: 10px;
@@ -25,11 +26,35 @@
 
 .textValue {
   flex-grow: 1;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 
   padding-left: 4px;
+}
+
+.searchInput {
+  width: 5ch;
+  min-width: 0;
+  max-width: 100%;
+  flex-grow: 1;
+  flex-basis: 5ch;
+  height: 1.5em;
+  border: none;
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  line-height: 1.5;
+  padding: 0;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.textValue > .searchInput {
+  flex-basis: 100%;
 }
 
 .valueBtn {
@@ -138,6 +163,7 @@
   overflow-y: auto;
 
   width: 100%;
+  min-height: 30px;
   max-height: 150px;
 
   border: 2px solid #777;

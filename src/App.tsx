@@ -48,6 +48,7 @@ const App = () => {
         value={selectedValue}
         onChange={(value) => setSelectedValue(value)}
         containerClassName={css.wrapApp}
+        searchable
       />
       <br />
 
@@ -57,6 +58,8 @@ const App = () => {
         value={selectedValues}
         onChange={(value) => setSelectedValues(value)}
         containerClassName={css.multipleSelect}
+        searchable
+        searchPlaceholder={'Введіть ПІБ'}
       />
     </div>
   );

@@ -1,4 +1,12 @@
-import { useEffect, useRef, useState, useCallback, useId, type FocusEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useId,
+  useMemo,
+  type FocusEvent,
+} from 'react';
 import css from './CustomSelect.module.css';
 
 export type SelectOption = {
@@ -28,6 +36,9 @@ type SelectProps = {
   caretClassName?: string;
   listBoxClassName?: string;
   optionClassName?: string;
+  searchInputClassName?: string;
+  searchPlaceholder?: string;
+  searchable?: boolean;
 
   options: SelectOption[];
 } & (SingleSelectProps | MultipleSelectProps);
@@ -43,16 +54,31 @@ const CustomSelect = ({
   caretClassName,
   listBoxClassName,
   optionClassName,
+  searchInputClassName,
+  searchPlaceholder,
+  searchable = false,
   options,
   value,
   onChange,
 }: SelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef<Array<HTMLLIElement | null>>([]);
   const listId = useId();
-  const activeIndex = options.length === 0 ? 0 : Math.min(highlightedIndex, options.length - 1);
+  const filteredOptions = useMemo(
+    () =>
+      searchable
+        ? options.filter((option) =>
+            String(option.label).toLowerCase().includes(searchQuery.trim().toLowerCase())
+          )
+        : options,
+    [options, searchable, searchQuery]
+  );
+  const activeIndex =
+    filteredOptions.length === 0 ? 0 : Math.min(highlightedIndex, filteredOptions.length - 1);
 
   function isSameOption(first: SelectOption, second?: SelectOption) {
     return first.value === second?.value;
@@ -68,6 +94,8 @@ const CustomSelect = ({
         }
       } else {
         if (!isSameOption(option, value)) onChange(option);
+        setSearchQuery('');
+        setIsSearching(false);
         setIsOpen(false);
       }
     },
@@ -80,6 +108,8 @@ const CustomSelect = ({
     } else {
       onChange(undefined);
     }
+    setSearchQuery('');
+    setIsSearching(false);
     setIsOpen(false);
   }
 
@@ -115,10 +145,59 @@ const CustomSelect = ({
     }
   }
 
+  function renderTextValue() {
+    if (!searchable) return renderSelectedValue();
+
+    return (
+      <>
+        {multiple && value.length > 0 && renderSelectedValue()}
+        <input
+          className={`${css.searchInput} ${searchInputClassName ?? ''}`}
+          type="text"
+          value={
+            isSearching
+              ? searchQuery
+              : !multiple && value
+                ? String(value.label)
+                : ''
+          }
+          placeholder={
+            searchPlaceholder ??
+            (multiple
+              ? value.length === 0
+                ? 'Оберіть варіанти або знайдіть'
+                : 'Знайти'
+              : value
+                ? undefined
+                : 'Оберіть або знайдіть')
+          }
+          aria-label="Пошук варіантів"
+          autoComplete="off"
+          onClick={(event) => event.stopPropagation()}
+          onFocus={() => {
+            setIsSearching(true);
+            setIsOpen(true);
+            if (!multiple && value && searchQuery === '') {
+              setSearchQuery(String(value.label));
+            }
+          }}
+          onChange={(event) => {
+            setIsSearching(true);
+            setSearchQuery(event.target.value);
+            setHighlightedIndex(0);
+            setIsOpen(true);
+          }}
+        />
+      </>
+    );
+  }
+
   function handleBlur(event: FocusEvent<HTMLDivElement>) {
     const nextTarget = event.relatedTarget;
     if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
       setIsOpen(false);
+      setSearchQuery('');
+      setIsSearching(false);
     }
   }
 
@@ -128,6 +207,9 @@ const CustomSelect = ({
     const pressKeyHandler = (e: KeyboardEvent) => {
       if (!container || !container.contains(e.target as Node)) return;
       if ((e.target as HTMLElement).closest('button')) return;
+    if ((e.target as HTMLElement).tagName === 'INPUT' && e.key.length === 1) {
+      return;
+    }
 
       switch (e.code) {
         case 'Enter':
@@ -137,7 +219,7 @@ const CustomSelect = ({
           if (!isOpen) {
             setIsOpen(true);
           } else {
-            const option = options[Math.min(activeIndex, options.length - 1)];
+            const option = filteredOptions[Math.min(activeIndex, filteredOptions.length - 1)];
             if (option) {
               onSelect(option);
             }
@@ -153,19 +235,20 @@ const CustomSelect = ({
             break;
           }
 
-          if (options.length === 0) break;
+          if (filteredOptions.length === 0) break;
 
           const newValue =
-            (activeIndex + (e.code === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+            (activeIndex + (e.code === 'ArrowDown' ? 1 : -1) + filteredOptions.length) %
+            filteredOptions.length;
 
-          if (newValue >= 0 && newValue < options.length) {
+          if (newValue >= 0 && newValue < filteredOptions.length) {
             setHighlightedIndex(newValue);
           }
           break;
         }
 
         case 'Home':
-          if (isOpen && options.length > 0) {
+          if (isOpen && filteredOptions.length > 0) {
             e.preventDefault();
             setHighlightedIndex(0);
           }
@@ -173,9 +256,9 @@ const CustomSelect = ({
           break;
 
         case 'End':
-          if (isOpen && options.length > 0) {
+          if (isOpen && filteredOptions.length > 0) {
             e.preventDefault();
-            setHighlightedIndex(options.length - 1);
+            setHighlightedIndex(filteredOptions.length - 1);
           }
 
           break;
@@ -184,6 +267,8 @@ const CustomSelect = ({
           if (isOpen) {
             e.preventDefault();
             setIsOpen(false);
+            setSearchQuery('');
+            setIsSearching(false);
           }
           break;
       }
@@ -194,7 +279,7 @@ const CustomSelect = ({
     return () => {
       container?.removeEventListener('keydown', pressKeyHandler);
     };
-  }, [isOpen, activeIndex, options, onSelect]);
+  }, [isOpen, activeIndex, filteredOptions, onSelect]);
 
   useEffect(() => {
     if (isOpen && optionRefs.current[activeIndex]) {
@@ -222,7 +307,7 @@ const CustomSelect = ({
         isOpen && options[activeIndex] ? `${listId}-option-${activeIndex}` : undefined
       }
     >
-      <span className={`${css.textValue} ${textBoxClassName ?? ''}`}>{renderSelectedValue()}</span>
+      <span className={`${css.textValue} ${textBoxClassName ?? ''}`}>{renderTextValue()}</span>
 
       <div className={`${css.btnsBox} ${rightBtnsBoxClassName ?? ''}`}>
         <button
@@ -255,7 +340,7 @@ const CustomSelect = ({
           role="listbox"
           aria-multiselectable={multiple || undefined}
         >
-          {options.map((option, index) => (
+          {filteredOptions.map((option, index) => (
             <li
               id={`${listId}-option-${index}`}
               ref={(element) => {
