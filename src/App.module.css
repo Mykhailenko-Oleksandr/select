@@ -10,11 +10,6 @@
   margin-top: 100px;
 }
 
-.multipleSelect {
-  max-width: 300px;
-}
-
-.textValue {
-  padding-left: 20px;
-  color: red;
+.wrapApp {
+  border: 3px solid red;
 }

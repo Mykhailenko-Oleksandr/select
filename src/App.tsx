@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import css from './App.module.css';
 import CustomSelect, { type SelectOption } from './components/CustomSelect/CustomSelect';
+import css from './App.module.css';
 
 const options = [
   {
@@ -47,7 +47,7 @@ const App = () => {
         options={options}
         value={selectedValue}
         onChange={(value) => setSelectedValue(value)}
-        textBoxClassName={css.textValue}
+        containerClassName={css.wrapApp}
       />
       <br />
 

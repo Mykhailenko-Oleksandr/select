@@ -28,6 +28,7 @@ type SelectProps = {
   caretClassName?: string;
   listBoxClassName?: string;
   optionClassName?: string;
+
   options: SelectOption[];
 } & (SingleSelectProps | MultipleSelectProps);
 
@@ -155,8 +156,7 @@ const CustomSelect = ({
           if (options.length === 0) break;
 
           const newValue =
-            (activeIndex + (e.code === 'ArrowDown' ? 1 : -1) + options.length) %
-            options.length;
+            (activeIndex + (e.code === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
 
           if (newValue >= 0 && newValue < options.length) {
             setHighlightedIndex(newValue);
