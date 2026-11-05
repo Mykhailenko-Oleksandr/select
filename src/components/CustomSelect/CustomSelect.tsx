@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, type FocusEvent } from 'react';
 import css from './CustomSelect.module.css';
 
 export type SelectOption = {
@@ -27,20 +27,27 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const optionRefs = useRef<Array<HTMLLIElement | null>>([]);
 
-  function onSelect(option: SelectOption) {
-    if (multiple) {
-      if (value.includes(option)) {
-        onChange(value.filter((o) => o !== option));
-      } else {
-        onChange([...value, option]);
-      }
-    } else {
-      if (option !== value) onChange(option);
-    }
-
-    setIsOpen(false);
+  function isSameOption(first: SelectOption, second?: SelectOption) {
+    return first.value === second?.value;
   }
+
+  const onSelect = useCallback(
+    (option: SelectOption) => {
+      if (multiple) {
+        if (value.some((selectedOption) => isSameOption(selectedOption, option))) {
+          onChange(value.filter((selectedOption) => !isSameOption(selectedOption, option)));
+        } else {
+          onChange([...value, option]);
+        }
+      } else {
+        if (!isSameOption(option, value)) onChange(option);
+        setIsOpen(false);
+      }
+    },
+    [multiple, onChange, value]
+  );
 
   function onClear() {
     if (multiple) {
@@ -48,10 +55,13 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
     } else {
       onChange(undefined);
     }
+    setIsOpen(false);
   }
 
   function isSelectedOption(option: SelectOption) {
-    return multiple ? value.includes(option) : option === value;
+    return multiple
+      ? value.some((selectedOption) => isSameOption(selectedOption, option))
+      : isSameOption(option, value);
   }
 
   function renderSelectedValue() {
@@ -62,6 +72,7 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
               type="button"
               key={v.value}
               className={css.valueBtn}
+              aria-label={`Видалити ${v.label}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onSelect(v);
@@ -79,11 +90,19 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
     }
   }
 
+  function handleBlur(event: FocusEvent<HTMLDivElement>) {
+    const nextTarget = event.relatedTarget;
+    if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
+      setIsOpen(false);
+    }
+  }
+
   useEffect(() => {
     const container = containerRef.current;
 
     const pressKeyHandler = (e: KeyboardEvent) => {
       if (!container || !container.contains(e.target as Node)) return;
+      if ((e.target as HTMLElement).closest('button')) return;
 
       switch (e.code) {
         case 'Enter':
@@ -93,12 +112,13 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
           if (!isOpen) {
             setIsOpen(true);
           } else {
-            const option = options[highlightedIndex];
+            const option = options[Math.min(highlightedIndex, options.length - 1)];
             if (option) {
               onSelect(option);
             }
           }
           break;
+
         case 'ArrowUp':
         case 'ArrowDown': {
           e.preventDefault();
@@ -108,13 +128,34 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
             break;
           }
 
-          const newValue = highlightedIndex + (e.code === 'ArrowDown' ? 1 : -1);
+          if (options.length === 0) break;
+
+          const newValue =
+            (highlightedIndex + (e.code === 'ArrowDown' ? 1 : -1) + options.length) %
+            options.length;
 
           if (newValue >= 0 && newValue < options.length) {
             setHighlightedIndex(newValue);
           }
           break;
         }
+
+        case 'Home':
+          if (isOpen && options.length > 0) {
+            e.preventDefault();
+            setHighlightedIndex(0);
+          }
+
+          break;
+
+        case 'End':
+          if (isOpen && options.length > 0) {
+            e.preventDefault();
+            setHighlightedIndex(options.length - 1);
+          }
+
+          break;
+
         case 'Escape':
           if (isOpen) {
             e.preventDefault();
@@ -129,18 +170,30 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
     return () => {
       container?.removeEventListener('keydown', pressKeyHandler);
     };
-  }, [isOpen, highlightedIndex, options]);
+  }, [isOpen, highlightedIndex, options, onSelect]);
+
+  useEffect(() => {
+    if (isOpen && optionRefs.current[highlightedIndex]) {
+      optionRefs.current[highlightedIndex]?.scrollIntoView({
+        block: 'nearest',
+      });
+    }
+  }, [isOpen, highlightedIndex]);
 
   return (
     <div
       ref={containerRef}
       className={`${css.wrap} ${containerClassName ?? ''}`}
       tabIndex={0}
-      onBlur={() => setIsOpen(false)}
+      onBlur={handleBlur}
       onClick={() => {
         setHighlightedIndex(0);
         setIsOpen((prev) => !prev);
       }}
+      role="combobox"
+      aria-expanded={isOpen}
+      aria-haspopup="listbox"
+      aria-controls="selectList"
     >
       <span className={css.textValue}>{renderSelectedValue()}</span>
 
@@ -148,6 +201,7 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
         <button
           type="button"
           className={css.clearBtn}
+          aria-label="Очистити вибір"
           onClick={(e) => {
             e.stopPropagation();
             onClear();
@@ -168,12 +222,22 @@ const CustomSelect = ({ multiple, containerClassName, options, value, onChange }
       </div>
 
       {isOpen && (
-        <ul className={css.listBox}>
+        <ul
+          id="selectList"
+          className={css.listBox}
+          role="listbox"
+          aria-multiselectable={multiple || undefined}
+        >
           {options.map((option, index) => (
             <li
-              key={option.value}
+              ref={(element) => {
+                optionRefs.current[index] = element;
+              }}
+              key={`${option.value}-${index}`}
               className={`${css.option} ${isSelectedOption(option) ? css.isSelected : ''} 
               ${highlightedIndex === index ? css.isHighlighted : ''}`}
+              role="option"
+              aria-selected={isSelectedOption(option)}
               onClick={(e) => {
                 e.stopPropagation();
                 onSelect(option);
