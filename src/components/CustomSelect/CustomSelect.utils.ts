@@ -1,9 +1,43 @@
-import type { SelectOption } from "./CustomSelect.types";
+import type { SelectOption } from './CustomSelect.types';
 
-export function isSameOption(first: SelectOption, second?: SelectOption) {
+/**
+ * Порівнює два варіанти за їхнім стабільним значенням.
+ * @param first - Варіант, що виступає джерелом порівняння.
+ * @param second - Варіант для порівняння; може бути не визначений.
+ * @returns Чи мають обидва варіанти однакове значення.
+ */
+export function isSameOption(first: SelectOption, second?: SelectOption): boolean {
     return first.value === second?.value;
 }
-  
+
+/**
+ * Перевіряє, чи вибраний варіант у поточному режимі.
+ * @param option - Варіант, який потрібно перевірити.
+ * @param value - Поточне контрольоване значення для одного або кількох варіантів.
+ * @param multiple - Чи може поточне значення містити кілька вибраних варіантів.
+ * @returns Чи вибраний переданий варіант.
+ */
+export function isSelectedOption(
+  option: SelectOption,
+  value: SelectOption | SelectOption[] | undefined,
+  multiple: boolean
+): boolean {
+  if (!value) return false;
+  if (multiple) {
+    return Array.isArray(value)
+      ? value.some((selectedOption) => isSameOption(selectedOption, option))
+      : false;
+  }
+
+  return !Array.isArray(value) && isSameOption(option, value);
+}
+
+/**
+ * Перетворює можливий застарілий індекс на доступний індекс варіанта.
+ * @param currentIndex - Збережений індекс активного варіанта.
+ * @param optionsLength - Кількість доступних варіантів.
+ * @returns Допустимий індекс або нуль, якщо варіанти відсутні.
+ */
 export function getActiveIndex(
   currentIndex: number,
   optionsLength: number
@@ -13,6 +47,12 @@ export function getActiveIndex(
     : Math.min(currentIndex, optionsLength - 1);
 }
 
+/**
+ * Фільтрує варіанти за назвою.
+ * @param options - Доступні варіанти.
+ * @param searchQuery - Текст пошуку, введений користувачем.
+ * @returns Відфільтровані варіанти або початковий масив для порожнього запиту.
+ */
 export function filterOptions(
   options: SelectOption[],
   searchQuery: string

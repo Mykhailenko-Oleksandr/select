@@ -6,6 +6,11 @@ interface SelectActionsProps {
   onClear: () => void;
 }
 
+/**
+ * Рендерить кнопки очищення, роздільник та стрілку селекта.
+ * @param props - CSS-класи елементів та callback очищення.
+ * @returns Елементи керування селектом.
+ */
 const SelectActions = (props: SelectActionsProps) => {
   const { containerClassName, clearBtnClassName, dividerClassName, caretClassName, onClear } =
     props;

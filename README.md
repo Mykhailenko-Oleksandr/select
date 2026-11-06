@@ -1,5 +1,33 @@
 # React + TypeScript + Vite
 
+## CustomSelect: рекомендації
+
+- `CustomSelect.tsx` має залишатися orchestration-компонентом: props, state, callbacks і композиція.
+- `CustomSelect.utils.ts` призначений для чистих helper-функцій без React і DOM.
+- `hooks/useSelectKeyboard.ts` містить клавіатурну навігацію.
+- Компоненти в `components/` мають бути переважно presentational.
+- Не зберігати стан у presentational-компонентах і не використовувати `as` там, де можна застосувати union props.
+
+### Кастомізація CSS
+
+Порядок CSS import не є гарантованим механізмом перебивання стилів після bundle. Для override краще використовувати більшу специфічність або CSS variables:
+
+```css
+.selectTheme .customValueButton {
+  border-color: blue;
+}
+```
+
+Або:
+
+```css
+.customSelect.customSelect {
+  border-color: blue;
+}
+```
+
+Імпорт компонента вище глобальних стилів можна використовувати як домовленість читабельності, але не покладатися на нього для гарантованого override.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

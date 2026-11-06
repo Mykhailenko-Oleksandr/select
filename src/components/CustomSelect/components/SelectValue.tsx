@@ -9,6 +9,11 @@ type SelectValueProps = {
   | { multiple?: false; value?: SelectOption }
 );
 
+/**
+ * Рендерить назву вибраного варіанта або видалювані chips для множинного вибору.
+ * @param props - Значення та callback видалення для активного режиму.
+ * @returns Вибраний вміст, chips або стандартний placeholder.
+ */
 const SelectValue = (props: SelectValueProps) => {
   const { valueBtnClassName, onRemove } = props;
 

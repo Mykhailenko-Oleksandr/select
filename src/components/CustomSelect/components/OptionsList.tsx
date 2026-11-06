@@ -13,6 +13,11 @@ interface OptionsListProps {
   onHighlight: (index: number) => void;
 }
 
+/**
+ * Рендерить доступні варіанти як семантичний listbox.
+ * @param props - Стан listbox, стан відображення варіантів і callbacks взаємодії.
+ * @returns Listbox із елементами варіантів, доступними для вибору.
+ */
 const OptionsList = ({
   id,
   className,

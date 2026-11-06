@@ -12,6 +12,11 @@ interface UseSelectKeyboardProps {
   setHighlightedIndex: Dispatch<SetStateAction<number>>;
 }
 
+/**
+ * Додає клавіатурну навігацію до контейнера селекта.
+ * @param props - Ref контейнера, поточний стан, варіанти та callbacks стану.
+ * @returns Нічого. Effect реєструє DOM listener і видаляє його під час очищення.
+ */
 export function useSelectKeyboard({
   containerRef,
   isOpen,

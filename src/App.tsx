@@ -1,4 +1,5 @@
 import { useState } from 'react';
+// Для гарантованого override CSS-клас має бути специфічнішім; порядок CSS import не є гарантією.
 import CustomSelect from './components/CustomSelect/CustomSelect';
 import css from './App.module.css';
 import type { SelectOption } from './components/CustomSelect/CustomSelect.types';

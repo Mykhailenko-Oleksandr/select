@@ -1,13 +1,25 @@
 import { useEffect, useRef, useState, useCallback, useId, useMemo, type FocusEvent } from 'react';
 import css from './CustomSelect.module.css';
 import type { SelectOption, SelectProps } from './CustomSelect.types';
-import { filterOptions, getActiveIndex, isSameOption } from './CustomSelect.utils';
+import {
+  filterOptions,
+  getActiveIndex,
+  isSameOption,
+  isSelectedOption as isOptionSelected,
+} from './CustomSelect.utils';
 import SearchInput from './components/SearchInput';
 import SelectValue from './components/SelectValue';
 import SelectActions from './components/SelectActions';
 import OptionsList from './components/OptionsList';
 import { useSelectKeyboard } from './hooks/useSelectKeyboard';
 
+/**
+ * Рендерить контрольований селект у режимі одного або кількох варіантів.
+ * @param props - Варіанти, контрольоване значення, callback зміни та налаштування кастомізації.
+ * @returns Зібраний компонент селекта.
+ * @remarks Класові стилі з однаковою специфічністю залежать від правил каскаду.
+ * Для перевизначення базових стилів краще використовувати wrapper-селектор із більшою специфічністю.
+ */
 const CustomSelect = (props: SelectProps) => {
   const {
     multiple,
@@ -85,9 +97,7 @@ const CustomSelect = (props: SelectProps) => {
   }
 
   function isSelectedOption(option: SelectOption) {
-    return multiple
-      ? value.some((selectedOption) => isSameOption(selectedOption, option))
-      : isSameOption(option, value);
+    return isOptionSelected(option, value, !!multiple);
   }
 
   const resetSearch = useCallback(() => {
@@ -173,6 +183,7 @@ const CustomSelect = (props: SelectProps) => {
   });
 
   useEffect(() => {
+    // Прокручує виділену опцію до видимої області; викликається лише для наявного DOM-елемента.
     if (isOpen && optionRefs.current[activeIndex]) {
       optionRefs.current[activeIndex]?.scrollIntoView({
         block: 'nearest',

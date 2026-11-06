@@ -1,4 +1,4 @@
-import type { ChangeEvent, FocusEvent } from 'react';
+import type { ChangeEvent, FocusEvent, MouseEvent } from 'react';
 
 interface SearchInputProps {
   className: string;
@@ -6,9 +6,14 @@ interface SearchInputProps {
   placeholder?: string;
   onChange: (value: string) => void;
   onFocus?: (event: FocusEvent<HTMLInputElement>) => void;
-  onClick?: (event: React.MouseEvent<HTMLInputElement>) => void;
+  onClick?: (event: MouseEvent<HTMLInputElement>) => void;
 }
 
+/**
+ * Рендерить контрольоване поле пошуку.
+ * @param props - Значення поля, presentation та callbacks зміни, фокуса й кліку.
+ * @returns Текстове поле, налаштоване для пошуку варіантів.
+ */
 const SearchInput = ({
   className,
   value,
