@@ -6,6 +6,7 @@ import {
   getActiveIndex,
   isSameOption,
   isSelectedOption as isOptionSelected,
+  sortOptions,
 } from './CustomSelect.utils';
 import SearchInput from './components/SearchInput';
 import SelectValue from './components/SelectValue';
@@ -49,8 +50,11 @@ const CustomSelect = (props: SelectProps) => {
   const listId = useId();
 
   const filteredOptions = useMemo(() => {
-    if (!searchable) return options;
-    return filterOptions(options, searchQuery);
+    const visibleOptions = searchable
+      ? filterOptions(options, searchQuery)
+      : options;
+
+    return sortOptions(visibleOptions);
   }, [options, searchable, searchQuery]);
 
   const activeIndex = getActiveIndex(highlightedIndex, filteredOptions.length);
@@ -183,7 +187,6 @@ const CustomSelect = (props: SelectProps) => {
   });
 
   useEffect(() => {
-    // Прокручує виділену опцію до видимої області; викликається лише для наявного DOM-елемента.
     if (isOpen && optionRefs.current[activeIndex]) {
       optionRefs.current[activeIndex]?.scrollIntoView({
         block: 'nearest',
@@ -206,9 +209,7 @@ const CustomSelect = (props: SelectProps) => {
       aria-haspopup="listbox"
       aria-controls={listId}
       aria-activedescendant={
-        isOpen && filteredOptions[activeIndex]
-          ? `${listId}-option-${activeIndex}`
-          : undefined
+        isOpen && filteredOptions[activeIndex] ? `${listId}-option-${activeIndex}` : undefined
       }
     >
       <span className={`${css.textValue} ${textBoxClassName ?? ''}`}>{renderTextValue()}</span>

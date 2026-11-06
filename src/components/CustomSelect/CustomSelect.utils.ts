@@ -48,6 +48,19 @@ export function getActiveIndex(
 }
 
 /**
+ * Сортує копію варіантів за назвою в алфавітному порядку.
+ * @param options - Варіанти для сортування.
+ * @returns Новий масив, відсортований без зміни початкового масиву.
+ */
+export function sortOptions(options: SelectOption[]): SelectOption[] {
+  return [...options].sort((first, second) =>
+    String(first.label).localeCompare(String(second.label), 'uk', {
+      sensitivity: 'base',
+    })
+  );
+}
+
+/**
  * Фільтрує варіанти за назвою.
  * @param options - Доступні варіанти.
  * @param searchQuery - Текст пошуку, введений користувачем.

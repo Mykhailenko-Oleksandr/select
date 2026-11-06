@@ -1,5 +1,6 @@
 import type { RefObject } from 'react';
 import type { SelectOption } from '../CustomSelect.types';
+import css from '../CustomSelect.module.css';
 
 interface OptionsListProps {
   id: string;
@@ -35,6 +36,12 @@ const OptionsList = ({
     role="listbox"
     aria-multiselectable={multiple || undefined}
   >
+    {options.length === 0 && (
+      <li className={css.noResults} role="status">
+        Результатів не знайдено
+      </li>
+    )}
+
     {options.map((option, index) => (
       <li
         key={option.value}
