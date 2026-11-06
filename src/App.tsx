@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import CustomSelect, { type SelectOption } from './components/CustomSelect/CustomSelect';
+import CustomSelect from './components/CustomSelect/CustomSelect';
 import css from './App.module.css';
+import type { SelectOption } from './components/CustomSelect/CustomSelect.types';
 
 const options = [
   {
@@ -52,6 +53,7 @@ const App = () => {
         containerClassName={css.wrapApp}
         searchable
       />
+
       <br />
 
       <CustomSelect
@@ -65,13 +67,14 @@ const App = () => {
       />
 
       <br />
+
       <CustomSelect
         options={options}
         value={selectedValue2}
         onChange={(value) => setSelectedValue2(value)}
         containerClassName={css.wrapApp}
-        searchable
       />
+
       <br />
 
       <CustomSelect

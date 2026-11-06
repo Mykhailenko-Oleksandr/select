@@ -1,58 +1,33 @@
 import { useEffect, useRef, useState, useCallback, useId, useMemo, type FocusEvent } from 'react';
 import css from './CustomSelect.module.css';
+import type { SelectOption, SelectProps } from './CustomSelect.types';
+import { filterOptions, getActiveIndex, isSameOption } from './CustomSelect.utils';
+import SearchInput from './components/SearchInput';
+import SelectValue from './components/SelectValue';
+import SelectActions from './components/SelectActions';
+import OptionsList from './components/OptionsList';
+import { useSelectKeyboard } from './hooks/useSelectKeyboard';
 
-export type SelectOption = {
-  label: string | number;
-  value: string | number;
-};
+const CustomSelect = (props: SelectProps) => {
+  const {
+    multiple,
+    containerClassName,
+    textBoxClassName,
+    valueBtnClassName,
+    rightBtnsBoxClassName,
+    clearBtnClassName,
+    dividerClassName,
+    caretClassName,
+    listBoxClassName,
+    optionClassName,
+    searchInputClassName,
+    searchPlaceholder,
+    searchable = false,
+    options,
+    value,
+    onChange,
+  } = props;
 
-interface SingleSelectProps {
-  multiple?: false;
-  value?: SelectOption;
-  onChange: (value: SelectOption | undefined) => void;
-}
-
-interface MultipleSelectProps {
-  multiple: true;
-  value: SelectOption[];
-  onChange: (value: SelectOption[]) => void;
-}
-
-type SelectProps = {
-  containerClassName?: string;
-  textBoxClassName?: string;
-  valueBtnClassName?: string;
-  rightBtnsBoxClassName?: string;
-  clearBtnClassName?: string;
-  dividerClassName?: string;
-  caretClassName?: string;
-  listBoxClassName?: string;
-  optionClassName?: string;
-  searchInputClassName?: string;
-  searchPlaceholder?: string;
-  searchable?: boolean;
-
-  options: SelectOption[];
-} & (SingleSelectProps | MultipleSelectProps);
-
-const CustomSelect = ({
-  multiple,
-  containerClassName,
-  textBoxClassName,
-  valueBtnClassName,
-  rightBtnsBoxClassName,
-  clearBtnClassName,
-  dividerClassName,
-  caretClassName,
-  listBoxClassName,
-  optionClassName,
-  searchInputClassName,
-  searchPlaceholder,
-  searchable = false,
-  options,
-  value,
-  onChange,
-}: SelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,21 +35,25 @@ const CustomSelect = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef<Array<HTMLLIElement | null>>([]);
   const listId = useId();
-  const filteredOptions = useMemo(
-    () =>
-      searchable
-        ? options.filter((option) =>
-            String(option.label).toLowerCase().includes(searchQuery.trim().toLowerCase())
-          )
-        : options,
-    [options, searchable, searchQuery]
-  );
-  const activeIndex =
-    filteredOptions.length === 0 ? 0 : Math.min(highlightedIndex, filteredOptions.length - 1);
 
-  function isSameOption(first: SelectOption, second?: SelectOption) {
-    return first.value === second?.value;
-  }
+  const filteredOptions = useMemo(() => {
+    if (!searchable) return options;
+    return filterOptions(options, searchQuery);
+  }, [options, searchable, searchQuery]);
+
+  const activeIndex = getActiveIndex(highlightedIndex, filteredOptions.length);
+
+  const inputValue = isSearching ? searchQuery : !multiple && value ? String(value.label) : '';
+
+  const inputPlaceholder =
+    searchPlaceholder ??
+    (multiple
+      ? value.length === 0
+        ? 'Оберіть варіанти'
+        : 'Знайти'
+      : value
+        ? undefined
+        : 'Оберіть варіант');
 
   const onSelect = useCallback(
     (option: SelectOption) => {
@@ -111,67 +90,62 @@ const CustomSelect = ({
       : isSameOption(option, value);
   }
 
-  function renderSelectedValue() {
-    if (multiple) {
-      return value.length > 0
-        ? value.map((v) => (
-            <button
-              type="button"
-              key={v.value}
-              className={`${css.valueBtn} ${valueBtnClassName ?? ''}`}
-              aria-label={`Видалити ${v.label}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect(v);
-              }}
-            >
-              {v.label}
-              <svg width={8} height={8}>
-                <use href="icons.svg#icon-close"></use>
-              </svg>
-            </button>
-          ))
-        : 'Оберіть варіанти';
-    } else {
-      return value ? value.label : 'Оберіть варіант';
-    }
-  }
+  const resetSearch = useCallback(() => {
+    setSearchQuery('');
+    setIsSearching(false);
+  }, []);
 
   function renderTextValue() {
-    if (!searchable) return renderSelectedValue();
+    if (!searchable) {
+      if (multiple) {
+        return (
+          <SelectValue
+            multiple
+            value={value}
+            valueBtnClassName={valueBtnClassName}
+            onRemove={(option) => onSelect(option)}
+          />
+        );
+      }
+
+      return (
+        <SelectValue
+          value={value}
+          valueBtnClassName={valueBtnClassName}
+          onRemove={(option) => onSelect(option)}
+        />
+      );
+    }
 
     return (
       <>
-        {multiple && value.length > 0 && renderSelectedValue()}
-        <input
+        {multiple && value.length > 0 && (
+          <SelectValue
+            multiple
+            value={value}
+            valueBtnClassName={valueBtnClassName}
+            onRemove={(option) => onSelect(option)}
+          />
+        )}
+
+        <SearchInput
           className={`${css.searchInput} ${searchInputClassName ?? ''}`}
-          type="text"
-          value={isSearching ? searchQuery : !multiple && value ? String(value.label) : ''}
-          placeholder={
-            searchPlaceholder ??
-            (multiple
-              ? value.length === 0
-                ? 'Оберіть варіанти'
-                : 'Знайти'
-              : value
-                ? undefined
-                : 'Оберіть варіант')
-          }
-          aria-label="Пошук варіантів"
-          autoComplete="off"
+          value={inputValue}
+          placeholder={inputPlaceholder}
+          onChange={(value) => {
+            setIsSearching(true);
+            setSearchQuery(value);
+            setHighlightedIndex(0);
+            setIsOpen(true);
+          }}
           onClick={(event) => event.stopPropagation()}
           onFocus={() => {
             setIsSearching(true);
+            setHighlightedIndex(0);
             setIsOpen(true);
             if (!multiple && value && searchQuery === '') {
               setSearchQuery(String(value.label));
             }
-          }}
-          onChange={(event) => {
-            setIsSearching(true);
-            setSearchQuery(event.target.value);
-            setHighlightedIndex(0);
-            setIsOpen(true);
           }}
         />
       </>
@@ -187,85 +161,16 @@ const CustomSelect = ({
     }
   }
 
-  useEffect(() => {
-    const container = containerRef.current;
-
-    const pressKeyHandler = (e: KeyboardEvent) => {
-      if (!container || !container.contains(e.target as Node)) return;
-      if ((e.target as HTMLElement).closest('button')) return;
-      if ((e.target as HTMLElement).tagName === 'INPUT' && e.key.length === 1) {
-        return;
-      }
-
-      switch (e.code) {
-        case 'Enter':
-        case 'Space':
-          e.preventDefault();
-
-          if (!isOpen) {
-            setIsOpen(true);
-          } else {
-            const option = filteredOptions[Math.min(activeIndex, filteredOptions.length - 1)];
-            if (option) {
-              onSelect(option);
-            }
-          }
-          break;
-
-        case 'ArrowUp':
-        case 'ArrowDown': {
-          e.preventDefault();
-
-          if (!isOpen) {
-            setIsOpen(true);
-            break;
-          }
-
-          if (filteredOptions.length === 0) break;
-
-          const newValue =
-            (activeIndex + (e.code === 'ArrowDown' ? 1 : -1) + filteredOptions.length) %
-            filteredOptions.length;
-
-          if (newValue >= 0 && newValue < filteredOptions.length) {
-            setHighlightedIndex(newValue);
-          }
-          break;
-        }
-
-        case 'Home':
-          if (isOpen && filteredOptions.length > 0) {
-            e.preventDefault();
-            setHighlightedIndex(0);
-          }
-
-          break;
-
-        case 'End':
-          if (isOpen && filteredOptions.length > 0) {
-            e.preventDefault();
-            setHighlightedIndex(filteredOptions.length - 1);
-          }
-
-          break;
-
-        case 'Escape':
-          if (isOpen) {
-            e.preventDefault();
-            setIsOpen(false);
-            setSearchQuery('');
-            setIsSearching(false);
-          }
-          break;
-      }
-    };
-
-    container?.addEventListener('keydown', pressKeyHandler);
-
-    return () => {
-      container?.removeEventListener('keydown', pressKeyHandler);
-    };
-  }, [isOpen, activeIndex, filteredOptions, onSelect]);
+  useSelectKeyboard({
+    containerRef,
+    isOpen,
+    activeIndex,
+    options: filteredOptions,
+    onSelect,
+    resetSearch,
+    setIsOpen,
+    setHighlightedIndex,
+  });
 
   useEffect(() => {
     if (isOpen && optionRefs.current[activeIndex]) {
@@ -290,63 +195,36 @@ const CustomSelect = ({
       aria-haspopup="listbox"
       aria-controls={listId}
       aria-activedescendant={
-        isOpen && options[activeIndex] ? `${listId}-option-${activeIndex}` : undefined
+        isOpen && filteredOptions[activeIndex]
+          ? `${listId}-option-${activeIndex}`
+          : undefined
       }
     >
       <span className={`${css.textValue} ${textBoxClassName ?? ''}`}>{renderTextValue()}</span>
 
-      <div className={`${css.btnsBox} ${rightBtnsBoxClassName ?? ''}`}>
-        <button
-          type="button"
-          className={`${css.clearBtn} ${clearBtnClassName ?? ''}`}
-          aria-label="Очистити вибір"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClear();
-          }}
-        >
-          <svg width={14} height={14}>
-            <use href="icons.svg#icon-close"></use>
-          </svg>
-        </button>
-
-        <div className={`${css.divider} ${dividerClassName ?? ''}`}></div>
-
-        <div className={`${css.arrowBtn} ${isOpen ? css.isOpen : ''} ${caretClassName ?? ''}`}>
-          <svg width={12} height={12}>
-            <use href="icons.svg#icon-caret"></use>
-          </svg>
-        </div>
-      </div>
+      <SelectActions
+        containerClassName={`${css.btnsBox} ${rightBtnsBoxClassName ?? ''}`}
+        clearBtnClassName={`${css.clearBtn} ${clearBtnClassName ?? ''}`}
+        dividerClassName={`${css.divider} ${dividerClassName ?? ''}`}
+        caretClassName={`${css.arrowBtn} ${isOpen ? css.isOpen : ''} ${caretClassName ?? ''}`}
+        onClear={onClear}
+      />
 
       {isOpen && (
-        <ul
+        <OptionsList
           id={listId}
           className={`${css.listBox} ${listBoxClassName ?? ''}`}
-          role="listbox"
-          aria-multiselectable={multiple || undefined}
-        >
-          {filteredOptions.map((option, index) => (
-            <li
-              id={`${listId}-option-${index}`}
-              ref={(element) => {
-                optionRefs.current[index] = element;
-              }}
-              key={option.value}
-              className={`${css.option} ${isSelectedOption(option) ? css.isSelected : ''} 
-              ${activeIndex === index ? css.isHighlighted : ''} ${optionClassName ?? ''}`}
-              role="option"
-              aria-selected={isSelectedOption(option)}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect(option);
-              }}
-              onMouseEnter={() => setHighlightedIndex(index)}
-            >
-              {option.label}
-            </li>
-          ))}
-        </ul>
+          options={filteredOptions}
+          multiple={multiple}
+          optionRefs={optionRefs}
+          isSelected={isSelectedOption}
+          getOptionClassName={(option, index) =>
+            `${css.option} ${isSelectedOption(option) ? css.isSelected : ''}
+            ${activeIndex === index ? css.isHighlighted : ''} ${optionClassName ?? ''}`
+          }
+          onSelect={onSelect}
+          onHighlight={setHighlightedIndex}
+        />
       )}
     </div>
   );
